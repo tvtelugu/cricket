@@ -1,8 +1,10 @@
 import requests
+import os
 from datetime import datetime, timedelta
 
 # ================= CONFIGURATION =================
-SOURCE_URL = "https://raw.githubusercontent.com/vaathala00/bbm/refs/heads/main/stream.m3u"
+# Fetches from GitHub Secrets via Environment Variable
+SOURCE_URL = os.getenv("SOURCE_URL")
 OUTPUT_FILE = "stream.m3u"
 NEW_GROUP = 'group-title="𝐂𝐫𝐢𝐜𝐤𝐞𝐭 | 𝐥𝐢𝐯𝐞"'
 
@@ -14,6 +16,7 @@ def get_ist_time():
 def is_link_working(url):
     """Checks if a streaming link is active (200 OK)."""
     try:
+        # Using a timeout of 5s to keep the Action fast
         response = requests.get(url, timeout=5, stream=True, allow_redirects=True)
         return response.status_code == 200
     except:
@@ -23,7 +26,6 @@ def filter_and_rename(data):
     lines = data.splitlines()
     current_ist = get_ist_time()
     
-    # Playlist Header
     filtered_content = [
         "#EXTM3U",
         f"# Last Updated : {current_ist} IST",
@@ -56,11 +58,8 @@ def filter_and_rename(data):
                     parts = line.split(",")
                     original_name = parts[-1]
                     clean_lang = original_name.split("|")[-1].strip()
-                    
-                    # Rename: T20 | |TAMIL
                     new_channel_name = f"{matched_prefix} | |{clean_lang}"
                     
-                    # Update Group Name
                     new_info = line
                     for old_group in target_groups.keys():
                         new_info = new_info.replace(old_group, NEW_GROUP)
@@ -72,6 +71,10 @@ def filter_and_rename(data):
     return "\n".join(filtered_content)
 
 def run():
+    if not SOURCE_URL:
+        print("❌ Error: SOURCE_URL secret not found!")
+        return
+
     print(f"🚀 Update started at {get_ist_time()}")
     headers = {"User-Agent": "Mozilla/5.0"}
     try:

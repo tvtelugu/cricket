@@ -23,6 +23,9 @@ jobs:
         run: pip install requests
 
       - name: Run Script
+        env:
+          # This maps your GitHub Secret to the Python script
+          SOURCE_URL: ${{ secrets.SOURCE_URL }}
         run: python cricket_updater.py
 
       - name: Commit Changes
